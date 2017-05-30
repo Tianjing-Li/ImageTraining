@@ -1,20 +1,16 @@
 # USAGE
 # python markrect.py -i imagefolder/ -j jsonfile.json
+# for every image, generate a corresponding .txt file with labels for different objects
+# FORMAT OF .TXT: <label id> <x> <y> <w> <h>, where (x, y, w, h) are floats in [0,1]
+# (x, y) correspond to the center of the object, and (w, h) are the width and height 
+
+
 # 'S' - 'Save' key to save current box to elements list
 # 'N' - 'Next' key to next image (appends current image info to JSON) 
 # saving a JSON object with image_path will override any previous JSON object with same image_path
 # 'P' - 'Previous' key to backtrack image
 # 'R' - 'Reset' key to reset the marking of current images
 # 'Q' - 'Quit' key to quit
-
-# Legend:
-# 0 : lonely
-# 1 : love
-# 2 : meeting
-# 3 : team
-# 4 : party
-# 5 : fighting
-# 6 : singers
 
 from Tkinter import *
 
@@ -25,36 +21,34 @@ import json
 import glob
 import os
 
-# TODO: Wrap in class
-
 # list of reference points
 refPt = []
 # list of elements in an image
 elements = []
 # name of current label
-label = 0
+label = ""
 
 chose = False
 
-def printn(name):
+def printn(n):
 	global root, label, chose
 
-	if name == "lonely":
-		label = 0
-	elif name == "love":
-		label = 1
-	elif name == "meeting":
-		label = 2
-	elif name == "team":
-		label = 3
-	elif name == "party":
-		label = 4
-	elif name == "fighting":
-		label = 5
-	elif name == "singers":
-		label = 6
+	if n == 1:
+		label = "lonely"
+	elif n == 2:
+		label = "love"
+	elif n == 3:
+		label = "meeting"
+	elif n == 4:
+		label = "team"
+	elif n == 5:
+		label = "party"
+	elif n == 6:
+		label = "fighting"
+	elif n == 7:
+		label = "singers"
 
-	print "Current label is {0}".format(name)
+	print "Current label is {0}".format(label)
 
 	chose = True
 
@@ -92,13 +86,13 @@ def slideshow(images, json_name):
 
 	frame.pack()
 
-	button1 = Button(frame, text="Lonely", command= lambda: printn("lonely"),  width= 20)
-	button2 = Button(frame, text="Love", command= lambda: printn("love"), width= 20)
-	button3 = Button(frame, text="Meeting", command= lambda: printn("meeting"), width= 20)
-	button4 = Button(frame, text="Team", command= lambda: printn("team"),  width= 20)
-	button5 = Button(frame, text="Party", command= lambda: printn("party"), width= 20)
-	button6 = Button(frame, text="Fighting", command= lambda: printn("fighting"), width= 20)
-	button7 = Button(frame, text="Singers", command= lambda: printn("singers"),  width= 20)
+	button1 = Button(frame, text="Lonely", command= lambda: printn(1),  width= 20)
+	button2 = Button(frame, text="Love", command= lambda: printn(2), width= 20)
+	button3 = Button(frame, text="Meeting", command= lambda: printn(3), width= 20)
+	button4 = Button(frame, text="Team", command= lambda: printn(4),  width= 20)
+	button5 = Button(frame, text="Party", command= lambda: printn(5), width= 20)
+	button6 = Button(frame, text="Fighting", command= lambda: printn(6), width= 20)
+	button7 = Button(frame, text="Singers", command= lambda: printn(7),  width= 20)
 
 
 	button1.pack()
@@ -142,7 +136,7 @@ def slideshow(images, json_name):
 		# go to next image
 		if key == ord("n") or key == ord("N"):
 			save_json(images[index]) # saves current 
-			if index < len(images) - 1 and len(refPt) == 0:
+			if index < len(images) - 1:
 				index = index + 1
 				image = cv2.imread(images[index])
 				# prepare frame for new image
@@ -168,14 +162,12 @@ def slideshow(images, json_name):
 
 		# save rectangle and label it
 		elif key == ord("s") or key == ord("S"):
-			if len(refPt) == 4 and chose:
+			if len(refPt) == 4:
 				element = {}
-				
+				print refPt
 				element["contours"] = order_coords_clockwise(refPt)
 				element["label"] = label
 				elements.append(element)
-
-				print elements
 				
 				prev = image.copy()
 
@@ -184,20 +176,20 @@ def slideshow(images, json_name):
 				chose = False
 				root.deiconify()
 			else:
-				os.system("say 'Incomplete'")
+				os.system("say 'You don't have 4 coordinates")
+				return
 
 		# reset elements list for the current image
 		elif key == ord("r") or key == ord("R"):
 			resetImage()
 			image = clean.copy()
-			prev = image.copy()
 
 
 		# finish marking and dump JSON
 		elif key == ord("f") or key == ord("F"):
 			with open(json_name, 'w') as js:
-				json.dump(JSON, js, indent=2)
-			os.system("say 'Jayson saved'")
+				json.dump(JSON, js)
+			os.system("say 'All saved'")
 
 		# quit
 		elif key == ord("q") or key == ord("Q"):
@@ -207,15 +199,11 @@ def slideshow(images, json_name):
 
 
 def resetImage():
-	global refPt, elements, label, root, chose
+	global refPt, elements, label, root
 	del refPt[:]
 	del elements[:]
-
-	if chose:
-		root.deiconify()
-		chose = False
-
-	label = 0
+	root.deiconify()
+	label = ""
 
 # mark 4 coordinates
 def mark_poly(event, x, y, flags, param):
@@ -241,6 +229,9 @@ def mark_poly(event, x, y, flags, param):
 			cv2.line(image, refPt[0], refPt[3], (0, 0, 255), 2)
 
 		cv2.imshow("Image", image)
+
+		print elements
+
 
 # takes as input a list of elements
 # each item in the list is a dictionary with
