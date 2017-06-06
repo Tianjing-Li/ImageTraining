@@ -41,8 +41,8 @@ def addkp():
 
 		x = (p1[0] + p2[0]) / 2
 		y = (p1[1] + p2[1]) / 2
-		w = p2[0] - p1[0]
-		h = p2[1] - p1[1]
+		w = abs(p2[0] - p1[0])
+		h = abs(p2[1] - p1[1])
 
 		keypoints.append([x, y, w, h])
 
@@ -79,7 +79,7 @@ def append_json(imagepath):
 	JSON.append(json)
 
 def slideshow(images):
-	global refPt, keypoints, image, clean
+	global refPt, keypoints, image, clean, JSON, jsonname
 
 	index = 0
 
@@ -127,6 +127,11 @@ def slideshow(images):
 			else:
 				os.system("say 'No previous pictures")
 
+		elif key == ord("s") or key == ord("S"):
+			if len(JSON) > 0:
+				with open (jsonname, "w") as js:
+					json.dump(JSON, js, indent=2)
+					print "JSON saved"
 		# reset keypoints
 		elif key == ord("r") or key == ord("R"):
 			reset()
@@ -134,35 +139,130 @@ def slideshow(images):
 
 		# quit
 		elif key == ord("q") or key == ord("Q"):
+			if len(JSON) > 0:
+				with open (jsonname, "w") as js:
+					json.dump(JSON, js, indent=2)
+					print "JSON saved"
+			break
+
+def edit(jsonname):
+	global refPt, keypoints, image, clean, JSON
+
+	with open(jsonname) as js:
+		JSON = json.load(js)
+
+	index = 0
+
+	path = JSON[index]["image_path"]
+	keypoints = JSON[index]["keypoints"]
+
+	image = cv2.imread(path)
+	clean = image.copy()
+
+	cv2.namedWindow("Image")
+	cv2.setMouseCallback("Image", clicker)
+
+	# loops until "Q" pressed
+	while True:
+
+		for kp in keypoints:
+			cv2.rectangle(image, (kp[0] - kp[2]/2, kp[1] - kp[3]/2), (kp[0] + kp[2]/2, kp[1] + kp[3]/2), (0, 255, 0), 2)
+
+		# display image and wait for key
+		cv2.imshow("Image", image)
+
+		key = cv2.waitKey(1) & 0xFF
+
+		# go to next image
+		if key == ord("n") or key == ord("N"):
+			if len(keypoints) > 0:
+				append_json(path) # saves current 
+			else:
+				print "No keypoints"
+			if index < len(JSON) - 1:
+				index = index + 1
+				path = JSON[index]["image_path"]
+				image = cv2.imread(path)
+				keypoints = JSON[index]["keypoints"]
+				# prepare frame for new image
+				clean = image.copy()
+				del refPt[:]
+				# RESET CLICKER FOR NEW IMAGE
+			else:
+				os.system("say 'No more pictures'")
+
+		# go to previous image
+		elif key == ord("p") or key == ord("P"):
+			if index > 0:
+				index = index - 1
+				path = JSON[index]["image_path"]
+				image = cv2.imread(path)
+				keypoints = JSON[index]["keypoints"]
+				# prepare frame for new image
+				clean = image.copy()
+				del refPt[:]
+				# RESET CLICKER FOR NEW IMAGE
+			else:
+				os.system("say 'No previous pictures")
+
+		elif key == ord("s") or key == ord("S"):
+			if len(keypoints) > 0:
+				append_json(path)
+
+				with open (jsonname, "w") as js:
+					json.dump(JSON, js, indent=2)
+					print "JSON saved"
+
+		# reset keypoints
+		elif key == ord("r") or key == ord("R"):
+			reset()
+			image = clean.copy()
+
+		# quit
+		elif key == ord("q") or key == ord("Q"):
+			with open (jsonname, "w") as js:
+					json.dump(JSON, js, indent=2)
+					print "JSON saved"
 			break
 def main():
-	global JSON
+	global JSON, jsonname
 
 	ap = argparse.ArgumentParser()
 	ap.add_argument("-i", "--image", required=True, help="Path to image files")
 	ap.add_argument("-j", "--json", required=True, help="Path to JSON file")
+	ap.add_argument("-e", "--edit", default=False)
 
 	args = vars(ap.parse_args())
-
-	# list of images
-	images = []
-	for type in ("*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG"):
-		for path in glob.glob(args["image"] + "/" + type):
-			images.append(path)
-
-	slideshow(images)
-
-	cv2.destroyAllWindows()
 
 	# write into output json
 	jsonname = args["json"]
 	if not jsonname.endswith(".json"):
 		jsonname = jsonname + ".json"
 
-	if len(JSON) > 0:
-		with open (jsonname, "w") as js:
-			json.dump(JSON, js, indent=2)
-		print "JSON saved"
+	# list of images
+	images = []
+	for type in ("*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG"):
+		for path in glob.glob(args["image"] + "/" + type):
+			# JSON already exists
+			if os.path.isfile(jsonname):
+				with open(jsonname) as js:
+					JSON = json.load(js)
+			
+			exists = False
+
+			for i in xrange(len(JSON)):
+				if JSON[i]["image_path"] == path:
+					exists = True
+
+			if not exists:	
+				images.append(path)
+
+	if not args["edit"]:
+		slideshow(images)
+	else:
+		edit(args["json"])
+
+	cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
