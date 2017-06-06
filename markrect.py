@@ -12,9 +12,10 @@
 # 1 : love
 # 2 : meeting
 # 3 : team
-# 4 : party
+# 4 : wedding
 # 5 : fighting
 # 6 : singers
+# 7 : party
 
 from Tkinter import *
 
@@ -47,12 +48,14 @@ def printn(name):
 		label = 2
 	elif name == "team":
 		label = 3
-	elif name == "party":
+	elif name == "wedding":
 		label = 4
 	elif name == "fighting":
 		label = 5
 	elif name == "singers":
 		label = 6
+	elif name == "party":
+		label = 7
 
 	print "Current label is {0}".format(name)
 
@@ -96,9 +99,10 @@ def slideshow(images, json_name):
 	button2 = Button(frame, text="Love", command= lambda: printn("love"), width= 20)
 	button3 = Button(frame, text="Meeting", command= lambda: printn("meeting"), width= 20)
 	button4 = Button(frame, text="Team", command= lambda: printn("team"),  width= 20)
-	button5 = Button(frame, text="Party", command= lambda: printn("party"), width= 20)
+	button5 = Button(frame, text="Wedding", command= lambda: printn("wedding"), width= 20)
 	button6 = Button(frame, text="Fighting", command= lambda: printn("fighting"), width= 20)
 	button7 = Button(frame, text="Singers", command= lambda: printn("singers"),  width= 20)
+	button8 = Button(frame, text="Party", command= lambda: printn("party"),  width= 20)
 
 
 	button1.pack()
@@ -108,6 +112,7 @@ def slideshow(images, json_name):
 	button5.pack()
 	button6.pack()
 	button7.pack()
+	button8.pack()
 
 	center(root)
 
