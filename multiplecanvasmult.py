@@ -168,6 +168,8 @@ def warpImageWithCanvas(srcImg, theta, phi, gamma, scale, fovy, elements):
 		canvas = story["contours"]
 		canvas = np.array([canvas])
 
+		print canvas
+
 		#	print 'cornersCanvas0', cornersCanvas0
 	
 		canvas = cv2.perspectiveTransform(canvas, M)[0]
@@ -493,6 +495,8 @@ for jsonitem in jsondata:
 		story["contours"] = refPt.astype(np.float32).copy()
 
 	# transform must take in a list of elements now
+
+	print elements
 	transform(image, elements[:], n)
 
 #M, corners = warpMatrix((10,10), 0, 0, 0, 1, 60000000000)
