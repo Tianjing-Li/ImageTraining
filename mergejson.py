@@ -28,7 +28,7 @@ if not mergedjsonfile.endswith('.json'):
 	mergedjsonfile = mergedjsonfile + '.json'
 
 with open(mergedjsonfile, "w") as outfile:
-	json.dump(mergedjson, outfile)
+	json.dump(mergedjson, outfile, indent=2)
 
 
 
